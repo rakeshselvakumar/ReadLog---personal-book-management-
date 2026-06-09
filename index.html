@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Book Shelf</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="logo">📚 My Book Shelf</div>
+      <button class="add-btn" onclick="openModal()">+ Add Book</button>
+    </header>
+
+    <!-- SEARCH BAR -->
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search books..." />
+    </div>
+
+    <!-- FILTER TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="filterBooks('all')">All</button>
+      <button class="tab" onclick="filterBooks('reading')">📖 Reading</button>
+      <button class="tab" onclick="filterBooks('read')">✅ Read</button>
+      <button class="tab" onclick="filterBooks('want')">📋 Want to Read</button>
+      <button class="tab" onclick="filterBooks('favourite')">⭐ Favourites</button>
+    </div>
+
+    <!-- STATS ROW -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="totalCount">0</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="readingCount">0</div>
+        <div class="stat-label">Reading</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="readCount">0</div>
+        <div class="stat-label">Read</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="wantCount">0</div>
+        <div class="stat-label">Wishlist</div>
+      </div>
+    </div>
+
+    <!-- BOOK LIST -->
+    <div class="book-list" id="bookList">
+      <!-- Books will appear here automatically using JavaScript -->
+    </div>
+
+    <!-- ADD BOOK POPUP (Modal) -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal">
+        <h2>Add New Book</h2>
+
+        <input type="text" id="bookTitle" placeholder="Book title" />
+        <input type="text" id="bookAuthor" placeholder="Author name" />
+        <input type="text" id="bookGenre" placeholder="Genre (e.g. Fiction, Self-help)" />
+
+        <select id="bookStatus">
+          <option value="reading">📖 Currently Reading</option>
+          <option value="read">✅ Read</option>
+          <option value="want">📋 Want to Read</option>
+          <option value="favourite">⭐ Favourite</option>
+        </select>
+
+        <!-- Only shows when status is "reading" -->
+        <div id="progressSection">
+          <input type="number" id="currentPage" placeholder="Current page" />
+          <input type="number" id="totalPages" placeholder="Total pages" />
+        </div>
+
+        <!-- Only shows when status is "read" or "favourite" -->
+        <div id="ratingSection">
+          <label>Rating:</label>
+          <select id="bookRating">
+            <option value="5">★★★★★</option>
+            <option value="4">★★★★☆</option>
+            <option value="3">★★★☆☆</option>
+            <option value="2">★★☆☆☆</option>
+            <option value="1">★☆☆☆☆</option>
+          </select>
+        </div>
+
+        <div class="modal-buttons">
+          <button onclick="addBook()">Save Book</button>
+          <button onclick="closeModal()">Cancel</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Link to JavaScript file -->
+    <script src="app.js"></script>
+
+  </body>
+
+</html>
