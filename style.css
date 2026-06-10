@@ -1,0 +1,15 @@
+body{font-family:Arial,sans-serif;margin:20px;background:#f4f4f4}
+
+.topbar,.tabs,.stats-row{display:flex;gap:10px;margin-bottom:15px}
+
+.book-list div{background:#fff;padding:10px;margin-bottom:10px;border-radius:5px}
+
+input,select,button{padding:8px;margin:5px}
+
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5)}
+
+.modal{background:#fff;width:300px;padding:15px;margin:80px auto}
+
+.stat-card{background:#fff;padding:10px;text-align:center;flex:1}
+
+.search-bar input{width:100%;box-sizing:border-box}
