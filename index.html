@@ -1,11 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ReadLog</title>
     <link rel="stylesheet" href="style.css" />
+   
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
 
   <body>
@@ -13,21 +15,31 @@
     <!-- TOP BAR -->
     <header class="topbar">
       <div class="logo">📚 ReadLog</div>
-      <button class="add-btn" onclick="openModal()">+ Add Book</button>
+      <div class="topbar-actions">
+        <button class="icon-btn" onclick="toggleDarkMode()" title="Toggle dark mode">🌙</button>
+        <button class="add-btn" onclick="openModal()">+ Add Book</button>
+      </div>
     </header>
 
-    <!-- SEARCH BAR -->
+    <!-- SEARCH & SORT BAR -->
     <div class="search-bar">
       <input type="text" id="searchInput" placeholder="Search books..." />
+      <select id="sortSelect" onchange="renderBooks()">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="title">Title A–Z</option>
+        <option value="rating">Rating ↓</option>
+      </select>
     </div>
 
     <!-- FILTER TABS -->
     <div class="tabs">
-      <button class="tab active" onclick="filterBooks('all')">All</button>
-      <button class="tab" onclick="filterBooks('reading')">📖 Reading</button>
-      <button class="tab" onclick="filterBooks('read')">✅ Read</button>
-      <button class="tab" onclick="filterBooks('want')">📋 Want to Read</button>
-      <button class="tab" onclick="filterBooks('favourite')">⭐ Favourites</button>
+      <button class="tab active" onclick="filterBooks('all', event)">All</button>
+      <button class="tab" onclick="filterBooks('reading', event)">📖 Reading</button>
+      <button class="tab" onclick="filterBooks('read', event)">✅ Read</button>
+      <button class="tab" onclick="filterBooks('want', event)">📋 Want to Read</button>
+      <button class="tab" onclick="filterBooks('favourite', event)">⭐ Favourites</button>
+      <button class="tab" onclick="filterBooks('stats', event)">📊 Stats</button>
     </div>
 
     <!-- STATS ROW -->
@@ -50,19 +62,63 @@
       </div>
     </div>
 
-    <!-- BOOK LIST -->
-    <div class="book-list" id="bookList">
-      <!-- Books will appear here automatically using JavaScript -->
+    <!-- YEARLY READING GOAL -->
+    <div class="goal-section" id="goalSection">
+      <div class="goal-header">
+        <span>📅 <strong>Reading Goal 2025</strong></span>
+        <button class="goal-edit-btn" onclick="editGoal()">Edit goal</button>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="goalBar" style="width:0%"></div>
+      </div>
+      <div class="progress-text">
+        <span id="goalText">0 of 0 books read this year</span>
+        <span id="goalPercent">0%</span>
+      </div>
     </div>
 
-    <!-- ADD BOOK POPUP (Modal) -->
+    <!-- BOOK LIST -->
+    <div class="book-list" id="bookList"></div>
+
+    <!-- STATS PAGE -->
+    <div class="stats-page" id="statsPage" style="display:none;">
+      <div class="chart-card">
+        <h3>Books by Status</h3>
+        <canvas id="statusChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Books by Genre</h3>
+        <canvas id="genreChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Average Rating</h3>
+        <div class="avg-rating" id="avgRating">–</div>
+        <div class="avg-label">out of 5 stars</div>
+      </div>
+    </div>
+
+    <!-- EXPORT BUTTONS -->
+    <div class="export-row" id="exportRow">
+      <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="export-btn" onclick="exportPDF()">⬇ Export PDF</button>
+    </div>
+
+    <!-- ADD / EDIT BOOK MODAL -->
     <div class="modal-overlay" id="modalOverlay">
       <div class="modal">
-        <h2>Add New Book</h2>
+        <h2 id="modalTitle">Add New Book</h2>
 
         <input type="text" id="bookTitle" placeholder="Book title" />
         <input type="text" id="bookAuthor" placeholder="Author name" />
         <input type="text" id="bookGenre" placeholder="Genre (e.g. Fiction, Self-help)" />
+
+        <!-- Book cover search -->
+        <div class="cover-row">
+          <button class="cover-search-btn" onclick="fetchCover()">🔍 Fetch Cover</button>
+          <span id="coverStatus" style="font-size:12px; color:#888;"></span>
+        </div>
+        <img id="coverPreview" src="" alt="Cover" style="display:none; width:80px; border-radius:6px; margin-top:4px;" />
+        <input type="hidden" id="bookCover" />
 
         <select id="bookStatus">
           <option value="reading">📖 Currently Reading</option>
@@ -71,14 +127,12 @@
           <option value="favourite">⭐ Favourite</option>
         </select>
 
-        <!-- Only shows when status is "reading" -->
-        <div id="progressSection">
-          <input type="number" id="currentPage" placeholder="Current page" />
-          <input type="number" id="totalPages" placeholder="Total pages" />
+        <div id="progressSection" style="display:none; flex-direction:column; gap:8px;">
+          <input type="number" id="currentPage" placeholder="Current page" min="0" />
+          <input type="number" id="totalPages" placeholder="Total pages" min="1" />
         </div>
 
-        <!-- Only shows when status is "read" or "favourite" -->
-        <div id="ratingSection">
+        <div id="ratingSection" style="display:none; align-items:center; gap:10px;">
           <label>Rating:</label>
           <select id="bookRating">
             <option value="5">★★★★★</option>
@@ -89,17 +143,15 @@
           </select>
         </div>
 
+        <textarea id="bookNotes" placeholder="Notes or review (optional)..." rows="3"></textarea>
+
         <div class="modal-buttons">
-          <button onclick="addBook()">Save Book</button>
+          <button onclick="saveBook()">Save Book</button>
           <button onclick="closeModal()">Cancel</button>
         </div>
-
       </div>
     </div>
 
-    <!-- Link to JavaScript file -->
     <script src="app.js"></script>
-
   </body>
-
 </html>
