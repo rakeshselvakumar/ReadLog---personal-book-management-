@@ -617,3 +617,48 @@ body {
 }
 
 .rec-empty .icon { font-size: 48px; margin-bottom: 12px; }
+
+/* UPLOAD COVER BUTTON */
+.upload-cover-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text);
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.upload-cover-btn:hover {
+  background: var(--border);
+}
+
+/* CUSTOM SCROLLBAR */
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  height: 6px;   /* horizontal scrollbar height */
+  width: 6px;    /* vertical scrollbar width */
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);        /* track matches page background */
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);    /* thumb matches border colour */
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted); /* slightly darker on hover */
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--bg);
+}
