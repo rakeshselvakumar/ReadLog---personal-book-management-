@@ -263,6 +263,248 @@ function toggleFavourite(id) {
   renderBooks();
 }
 
+// ==============================
+// RECOMMENDATIONS
+// ==============================
+
+async function renderRecommendations() {
+  const page = document.getElementById('recommendPage');
+
+  // Need at least 2 books to make recommendations
+  if (books.length < 2) {
+    page.innerHTML = `
+      <div class="rec-empty">
+        <div class="icon">📚</div>
+        <p>Add at least 2 books to get personalised recommendations!</p>
+      </div>`;
+    return;
+  }
+
+  // Show loading state
+  page.innerHTML = `
+    <div class="rec-loading">
+      <div class="spinner"></div>
+      Analysing your reading taste...
+    </div>`;
+
+  // ---- ANALYSE USER TASTE ----
+
+  // Count genres
+  const genreCount = {};
+  books.forEach(b => {
+    if (b.genre) {
+      const g = b.genre.trim().toLowerCase();
+      genreCount[g] = (genreCount[g] || 0) + 1;
+    }
+  });
+
+  // Count authors
+  const authorCount = {};
+  books.forEach(b => {
+    if (b.author) {
+      const a = b.author.trim().toLowerCase();
+      authorCount[a] = (authorCount[a] || 0) + 1;
+    }
+  });
+
+  // Get top 3 genres sorted by count
+  const topGenres = Object.entries(genreCount)
+    .sort((a,b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([genre]) => genre);
+
+  // Get top 3 authors
+  const topAuthors = Object.entries(authorCount)
+    .sort((a,b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([author]) => author);
+
+  // Get top rated books (4 stars and above)
+  const topRated = books
+    .filter(b => b.rating >= 4)
+    .sort((a,b) => b.rating - a.rating)
+    .slice(0, 3);
+
+  // Titles already in library (to avoid recommending them)
+  const existingTitles = new Set(
+    books.map(b => b.title.toLowerCase().trim())
+  );
+
+  // ---- FETCH RECOMMENDATIONS ----
+
+  // Fetch genre recommendations
+  const genreResults  = await fetchRecommendations('genre',  topGenres,   existingTitles);
+
+  // Fetch author recommendations
+  const authorResults = await fetchRecommendations('author', topAuthors,  existingTitles);
+
+  // Fetch based on top rated book titles (similar books)
+  const ratedTitles   = topRated.map(b => b.title);
+  const ratingResults = await fetchRecommendations('title',  ratedTitles, existingTitles);
+
+  // ---- RESTORE PAGE STRUCTURE ----
+  page.innerHTML = `
+    <div class="taste-card">
+      <div class="taste-title">📊 Your Reading Taste</div>
+      <div class="taste-row" id="tasteRow"></div>
+    </div>
+    <div class="rec-section" id="recGenreSection">
+      <div class="rec-section-title">🎯 Based on your favourite genres</div>
+      <div class="rec-grid" id="recGenreGrid"></div>
+    </div>
+    <div class="rec-section" id="recAuthorSection">
+      <div class="rec-section-title">✍️ More from authors you love</div>
+      <div class="rec-grid" id="recAuthorGrid"></div>
+    </div>
+    <div class="rec-section" id="recRatingSection">
+      <div class="rec-section-title">⭐ Because you loved these books</div>
+      <div class="rec-grid" id="recRatingGrid"></div>
+    </div>`;
+
+  // ---- RENDER TASTE TAGS ----
+  const tasteRow = document.getElementById('tasteRow');
+
+  // Show top genres as tags
+  topGenres.forEach(g => {
+    tasteRow.innerHTML += `<span class="taste-tag">📖 ${capitalise(g)}</span>`;
+  });
+
+  // Show top authors as tags
+  topAuthors.slice(0,2).forEach(a => {
+    tasteRow.innerHTML += `<span class="taste-tag">✍️ ${capitalise(a)}</span>`;
+  });
+
+  // Show avg rating
+  const ratedBooks = books.filter(b => b.rating);
+  if (ratedBooks.length) {
+    const avg = (ratedBooks.reduce((s,b) => s + b.rating, 0) / ratedBooks.length).toFixed(1);
+    tasteRow.innerHTML += `<span class="taste-tag">⭐ Avg rating: ${avg}</span>`;
+  }
+
+  // ---- RENDER RECOMMENDATION GRIDS ----
+  renderRecGrid('recGenreGrid',  genreResults);
+  renderRecGrid('recAuthorGrid', authorResults);
+  renderRecGrid('recRatingGrid', ratingResults);
+}
+
+
+// Fetch books from Open Library API based on query type
+async function fetchRecommendations(type, queries, existingTitles) {
+  const results = [];
+
+  for (const query of queries) {
+    if (!query) continue;
+
+    try {
+      let url = '';
+
+      if (type === 'genre') {
+        url = `https://openlibrary.org/search.json?subject=${encodeURIComponent(query)}&limit=6&fields=title,author_name,cover_i,key`;
+      } else if (type === 'author') {
+        url = `https://openlibrary.org/search.json?author=${encodeURIComponent(query)}&limit=6&fields=title,author_name,cover_i,key`;
+      } else if (type === 'title') {
+        url = `https://openlibrary.org/search.json?title=${encodeURIComponent(query)}&limit=6&fields=title,author_name,cover_i,key`;
+      }
+
+      const res  = await fetch(url);
+      const data = await res.json();
+
+      if (data.docs) {
+        data.docs.forEach(doc => {
+          const title = doc.title || '';
+
+          // Skip if already in user's library
+          if (existingTitles.has(title.toLowerCase().trim())) return;
+
+          // Skip duplicates within results
+          if (results.find(r => r.title.toLowerCase() === title.toLowerCase())) return;
+
+          results.push({
+            title,
+            author:  doc.author_name ? doc.author_name[0] : 'Unknown',
+            cover:   doc.cover_i
+              ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
+              : null,
+          });
+        });
+      }
+
+    } catch (err) {
+      console.error('Recommendation fetch error:', err);
+    }
+
+    // Stop once we have 10 results for this section
+    if (results.length >= 10) break;
+  }
+
+  return results.slice(0, 10);
+}
+
+
+// Render a row of recommendation cards
+function renderRecGrid(containerId, books) {
+  const grid = document.getElementById(containerId);
+
+  if (!grid) return;
+
+  if (!books.length) {
+    grid.innerHTML = `<div style="color:var(--text-muted); font-size:13px; padding:8px 0;">
+      No recommendations found for this category yet.</div>`;
+    return;
+  }
+
+  grid.innerHTML = books.map(book => `
+    <div class="rec-card" title="${book.title} by ${book.author}">
+      ${book.cover
+        ? `<img src="${book.cover}" class="rec-cover" alt="${book.title}"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'" />`
+        : ''}
+      <div class="rec-cover-placeholder" style="${book.cover ? 'display:none' : ''}">📚</div>
+      <div class="rec-title">${book.title}</div>
+      <div class="rec-author">${book.author}</div>
+      <button class="rec-add-btn" onclick='addToWantToRead(${JSON.stringify(book)})'>
+        + Want to Read
+      </button>
+    </div>
+  `).join('');
+}
+
+
+// Add recommended book directly to Want to Read list
+function addToWantToRead(book) {
+  // Check if already in library
+  const exists = books.find(b =>
+    b.title.toLowerCase().trim() === book.title.toLowerCase().trim()
+  );
+
+  if (exists) {
+    alert('This book is already in your library!');
+    return;
+  }
+
+  books.push({
+    id:        Date.now(),
+    title:     book.title,
+    author:    book.author,
+    genre:     '',
+    status:    'want',
+    cover:     book.cover || '',
+    notes:     '',
+    rating:    0,
+    dateRead:  null,
+    dateAdded: new Date().toISOString(),
+  });
+
+  saveBooks();
+  alert(`✅ "${book.title}" added to your Want to Read list!`);
+}
+
+
+// Helper — capitalise first letter of each word
+function capitalise(str) {
+  return str.replace(/\b\w/g, c => c.toUpperCase());
+}
+
 // FILTER & SEARCH
 
 function filterBooks(filter, e) {

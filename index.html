@@ -40,6 +40,7 @@
       <button class="tab" onclick="filterBooks('want', event)">📋 Want to Read</button>
       <button class="tab" onclick="filterBooks('favourite', event)">⭐ Favourites</button>
       <button class="tab" onclick="filterBooks('stats', event)">📊 Stats</button>
+      <button class="tab" onclick="filterBooks('recommend', event)">🔮 For You</button>
     </div>
 
     <!-- STATS ROW -->
@@ -96,6 +97,35 @@
         <div class="avg-label">out of 5 stars</div>
       </div>
     </div>
+
+    <!-- RECOMMENDATIONS PAGE -->
+<div class="recommend-page" id="recommendPage" style="display:none;">
+
+  <!-- Your taste summary -->
+  <div class="taste-card" id="tasteCard">
+    <div class="taste-title">📊 Your Reading Taste</div>
+    <div class="taste-row" id="tasteRow"></div>
+  </div>
+
+  <!-- Genre based -->
+  <div class="rec-section" id="recGenreSection">
+    <div class="rec-section-title">🎯 Based on your favourite genres</div>
+    <div class="rec-grid" id="recGenreGrid"></div>
+  </div>
+
+  <!-- Author based -->
+  <div class="rec-section" id="recAuthorSection">
+    <div class="rec-section-title">✍️ More from authors you love</div>
+    <div class="rec-grid" id="recAuthorGrid"></div>
+  </div>
+
+  <!-- Top rated based -->
+  <div class="rec-section" id="recRatingSection">
+    <div class="rec-section-title">⭐ Because you loved these books</div>
+    <div class="rec-grid" id="recRatingGrid"></div>
+  </div>
+
+</div>
 
     <!-- EXPORT BUTTONS -->
     <div class="export-row" id="exportRow">
