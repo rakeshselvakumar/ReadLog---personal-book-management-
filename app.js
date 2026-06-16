@@ -182,6 +182,64 @@ async function fetchCover() {
 }
 
 
+// HANDLE CUSTOM IMAGE UPLOAD
+function handleCoverUpload(event) {
+  const file = event.target.files[0];
+
+  // Check if user actually selected a file
+  if (!file) return;
+
+  // Only allow image files
+  if (!file.type.startsWith('image/')) {
+    alert('Please select an image file!');
+    return;
+  }
+
+  // Check file size — limit to 2MB to keep localStorage happy
+  if (file.size > 2 * 1024 * 1024) {
+    alert('Image is too large! Please use an image under 2MB.');
+    return;
+  }
+
+  document.getElementById('coverStatus').textContent = 'Loading...';
+
+  // FileReader converts the image to a base64 string
+  // Base64 = image stored as text — can be saved in localStorage
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    const base64Image = e.target.result; // looks like "data:image/jpeg;base64,..."
+
+    // Save to hidden input
+    document.getElementById('bookCover').value = base64Image;
+
+    // Show preview
+    document.getElementById('coverPreview').src           = base64Image;
+    document.getElementById('coverPreview').style.display = 'block';
+    document.getElementById('removeCoverBtn').style.display = 'block';
+    document.getElementById('coverStatus').textContent    = '✅ Cover uploaded!';
+  };
+
+  reader.onerror = function() {
+    document.getElementById('coverStatus').textContent = '❌ Failed to load image';
+  };
+
+  // This triggers the onload above
+  reader.readAsDataURL(file);
+}
+
+
+// REMOVE COVER
+function removeCover() {
+  document.getElementById('bookCover').value            = '';
+  document.getElementById('coverPreview').src           = '';
+  document.getElementById('coverPreview').style.display = 'none';
+  document.getElementById('removeCoverBtn').style.display = 'none';
+  document.getElementById('coverStatus').textContent    = '';
+  document.getElementById('coverUpload').value          = ''; // reset file input
+}
+
+
 // SAVE BOOK (ADD OR EDIT)
 
 function saveBook() {
@@ -513,14 +571,18 @@ function filterBooks(filter, e) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   if (e && e.target) e.target.classList.add('active');
 
-  const isStats = filter === 'stats';
-  document.getElementById('bookList').style.display    = isStats ? 'none' : 'block';
-  document.getElementById('statsPage').style.display   = isStats ? 'block' : 'none';
-  document.getElementById('exportRow').style.display   = isStats ? 'none' : 'flex';
-  document.getElementById('goalSection').style.display = isStats ? 'none' : 'block';
+  const isStats    = filter === 'stats';
+  const isRecommend = filter === 'recommend';
 
-  if (isStats) renderStats();
-  else renderBooks();
+  document.getElementById('bookList').style.display      = (!isStats && !isRecommend) ? 'block' : 'none';
+  document.getElementById('statsPage').style.display     = isStats     ? 'block' : 'none';
+  document.getElementById('recommendPage').style.display = isRecommend ? 'block' : 'none';
+  document.getElementById('exportRow').style.display     = (!isStats && !isRecommend) ? 'flex' : 'none';
+  document.getElementById('goalSection').style.display   = (!isStats && !isRecommend) ? 'block' : 'none';
+
+  if (isStats)     renderStats();
+  else if (isRecommend) renderRecommendations();
+  else             renderBooks();
 }
 
 document.getElementById('searchInput').addEventListener('input', renderBooks);
@@ -815,8 +877,9 @@ function exportPDF() {
   win.print();
 }
 
-
 // START THE APP
-
+currentFilter = 'all';
+document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+document.querySelector('.tab').classList.add('active');
 renderBooks();
 showHideFields();
